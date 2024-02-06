@@ -23,7 +23,7 @@
 			],
 			"transformations": [
 				{
-					"name": "externalCall1"
+					"name": "parseJson"
 				}
 			],
 			"scriptLines": [
@@ -40,12 +40,9 @@
 				"     batchSize: 1000,",
 				"     isolationLevel: 'READ_COMMITTED',",
 				"     format: 'table') ~> getJsonData",
-				"getJsonData call(output(",
-				"          headers as [string,string],",
-				"          status as string",
-				"     ),",
-				"     allowSchemaDrift: true) ~> externalCall1",
-				"externalCall1 sink(validateSchema: false,",
+				"getJsonData parse(format: 'json',",
+				"     documentForm: 'documentPerLine') ~> parseJson",
+				"parseJson sink(validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
 				"     store: 'cache',",
