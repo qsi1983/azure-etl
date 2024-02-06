@@ -28,6 +28,9 @@
 			"transformations": [
 				{
 					"name": "parseJson"
+				},
+				{
+					"name": "parse1"
 				}
 			],
 			"scriptLines": [
@@ -48,7 +51,10 @@
 				"getJsonData parse(title = json_data ? (glossary as (title as string)),",
 				"     format: 'json',",
 				"     documentForm: 'documentPerLine') ~> parseJson",
-				"parseJson sink(allowSchemaDrift: true,",
+				"parseJson parse(title_out = title ? (title as string),",
+				"     format: 'json',",
+				"     documentForm: 'documentPerLine') ~> parse1",
+				"parse1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'delimited',",
 				"     columnDelimiter: ',',",
