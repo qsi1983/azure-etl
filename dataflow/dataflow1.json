@@ -18,7 +18,11 @@
 			],
 			"sinks": [
 				{
-					"name": "sink1"
+					"linkedService": {
+						"referenceName": "OPTIMUS_FILE_STORAGE",
+						"type": "LinkedServiceReference"
+					},
+					"name": "putFileToStorage"
 				}
 			],
 			"transformations": [
@@ -44,13 +48,16 @@
 				"getJsonData parse(title = json_data ? (glossary as (title as string)),",
 				"     format: 'json',",
 				"     documentForm: 'documentPerLine') ~> parseJson",
-				"parseJson sink(validateSchema: false,",
+				"parseJson sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'delimited',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     store: 'cache',",
-				"     format: 'inline',",
-				"     output: true,",
-				"     saveOrder: 1) ~> sink1"
+				"     saveOrder: 1) ~> putFileToStorage"
 			]
 		}
 	}
