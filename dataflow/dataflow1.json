@@ -41,7 +41,7 @@
 				"     batchSize: 1000,",
 				"     isolationLevel: 'READ_COMMITTED',",
 				"     format: 'table') ~> getJsonData",
-				"getJsonData parse(json_data_out = json_data ? (glossary as (title as string)),",
+				"getJsonData parse(title = json_data ? (glossary as (title as string)),",
 				"     format: 'json',",
 				"     documentForm: 'documentPerLine') ~> parseJson",
 				"parseJson sink(validateSchema: false,",
