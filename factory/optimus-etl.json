@@ -1,0 +1,9 @@
+{
+	"name": "optimus-etl",
+	"location": "northeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "ee1a62ee-eecd-49bd-97a5-2f7b7ed45f11",
+		"tenantId": "9a8ff9e3-0e35-4620-a724-e9834dc50b51"
+	}
+}
