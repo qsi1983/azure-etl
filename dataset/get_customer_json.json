@@ -1,0 +1,40 @@
+{
+	"name": "get_customer_json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "OPTIMUS_DEV",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "row_id",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "etl_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "created_on",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "modified_on",
+				"type": "datetime2",
+				"scale": 7
+			},
+			{
+				"name": "json_data",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "stage",
+			"table": "test_table_1"
+		}
+	}
+}
