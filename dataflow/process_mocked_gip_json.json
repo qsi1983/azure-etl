@@ -1,5 +1,5 @@
 {
-	"name": "process_json",
+	"name": "process_mocked_gip_json",
 	"properties": {
 		"folder": {
 			"name": "JSON_PROCESSING"
@@ -81,7 +81,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> getRequiredFields",
-				"extractNestedData parse(column1_out = column1 ? (electronicAddress as string) ,",
+				"extractNestedData parse(column1_out = column1 ? (electronicAddress as string),",
 				"     format: 'json',",
 				"     documentForm: 'arrayOfDocuments') ~> parse1",
 				"getRequiredFields sink(allowSchemaDrift: true,",
