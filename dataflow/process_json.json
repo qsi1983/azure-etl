@@ -1,5 +1,5 @@
 {
-	"name": "dataflow1",
+	"name": "process_json",
 	"properties": {
 		"folder": {
 			"name": "JSON_PROCESSING"
@@ -30,7 +30,7 @@
 					"name": "parseJson"
 				},
 				{
-					"name": "parse1"
+					"name": "extractTitle"
 				}
 			],
 			"scriptLines": [
@@ -50,11 +50,19 @@
 				"     format: 'table') ~> getJsonData",
 				"getJsonData parse(title = json_data ? (glossary as (title as string)),",
 				"     format: 'json',",
-				"     documentForm: 'documentPerLine') ~> parseJson",
-				"parseJson parse(title_out = title ? (title as string),",
-				"     format: 'json',",
-				"     documentForm: 'documentPerLine') ~> parse1",
-				"parse1 sink(allowSchemaDrift: true,",
+				"     documentForm: 'arrayOfDocuments') ~> parseJson",
+				"parseJson foldDown(unroll(),",
+				"     mapColumn(",
+				"          row_id,",
+				"          etl_id,",
+				"          created_on,",
+				"          modified_on,",
+				"          json_data,",
+				"          title",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> extractTitle",
+				"extractTitle sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'delimited',",
 				"     columnDelimiter: ',',",
