@@ -54,7 +54,7 @@
 				"     documentForm: 'arrayOfDocuments') ~> parseJson",
 				"parseJson derive(message_id = technical_data.messageId,",
 				"          operation_status = technical_data.status,",
-				"          message_schema_version = technical_data.schemaversion) ~> extractNestedData",
+				"          message_schema_version = technical_data.schemaVersion) ~> extractNestedData",
 				"extractNestedData select(mapColumn(",
 				"          row_id,",
 				"          etl_id,",
