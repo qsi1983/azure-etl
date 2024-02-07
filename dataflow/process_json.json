@@ -18,10 +18,6 @@
 			],
 			"sinks": [
 				{
-					"linkedService": {
-						"referenceName": "OPTIMUS_FILE_STORAGE",
-						"type": "LinkedServiceReference"
-					},
 					"name": "putFileToStorage"
 				}
 			],
@@ -54,13 +50,12 @@
 				"parseJson derive(title_out = title_out.glossary.title) ~> extractNestedData",
 				"extractNestedData sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
-				"     format: 'delimited',",
-				"     columnDelimiter: ',',",
-				"     escapeChar: '\\\\',",
-				"     quoteChar: '\\\"',",
-				"     columnNamesAsHeader: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
+				"     keys:['row_id'],",
+				"     store: 'cache',",
+				"     format: 'inline',",
+				"     output: false,",
 				"     saveOrder: 1) ~> putFileToStorage"
 			]
 		}
