@@ -101,7 +101,7 @@
 					"name": "addAddressLine2"
 				},
 				{
-					"name": "select1"
+					"name": "getAddressColumns1"
 				}
 			],
 			"scriptLines": [
@@ -270,7 +270,7 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> getAddressLine4",
-				"select1, getAddressLine2 join(select1@row_id == getAddressLine2@row_id,",
+				"getAddressColumns1, getAddressLine2 join(getAddressColumns1@row_id == getAddressLine2@row_id,",
 				"     joinType:'left',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
@@ -281,7 +281,6 @@
 				"          created_on,",
 				"          modified_on,",
 				"          json_data,",
-				"          technical_data,",
 				"          message_id,",
 				"          operation_status,",
 				"          message_schema_version,",
@@ -291,11 +290,10 @@
 				"          electronic_address_list,",
 				"          physical_address_list,",
 				"          electronic_address,",
-				"          row_id = getAddressLine1@row_id,",
 				"          address_line_1",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
+				"     skipDuplicateMapOutputs: true) ~> getAddressColumns1",
 				"addAddressLine2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
