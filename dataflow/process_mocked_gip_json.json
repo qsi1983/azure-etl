@@ -38,16 +38,22 @@
 					"name": "extractElectronicAddress"
 				},
 				{
-					"name": "select1"
-				},
-				{
 					"name": "filterPhoneNumber"
 				},
 				{
-					"name": "sortByPhoneNumberOrded"
+					"name": "selectElectronicAddress"
 				},
 				{
-					"name": "selectElectronicAddress"
+					"name": "setRankForFiltering"
+				},
+				{
+					"name": "filterPhoneNumberOnRank"
+				},
+				{
+					"name": "addElectronicAddress"
+				},
+				{
+					"name": "getPhoneNumber"
 				}
 			],
 			"scriptLines": [
@@ -99,36 +105,33 @@
 				"     documentForm: 'arrayOfDocuments') ~> parseElectronicAddress",
 				"parseElectronicAddress derive(key = electronic_address.electronicAddressType,",
 				"          value = electronic_address.electronicAddress,",
-				"          order = electronic_address.instanceIdentity) ~> extractElectronicAddress",
-				"extractNestedData select(mapColumn(",
-				"          row_id,",
-				"          etl_id,",
-				"          created_on,",
-				"          modified_on,",
-				"          json_data,",
-				"          technical_data,",
-				"          message_id,",
-				"          operation_status,",
-				"          message_schema_version,",
-				"          gip,",
-				"          involved_party_type,",
-				"          sole_trade_flag,",
-				"          electronic_address_list,",
-				"          physical_address_list",
-				"     ),",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1",
+				"          instance_identity = electronic_address.instanceIdentity) ~> extractElectronicAddress",
 				"selectElectronicAddress filter(equalsIgnoreCase(key, 'TELEPHONE_NUMBER')) ~> filterPhoneNumber",
-				"filterPhoneNumber sort(asc(order, true)) ~> sortByPhoneNumberOrded",
 				"extractElectronicAddress select(mapColumn(",
 				"          row_id,",
 				"          key,",
 				"          value,",
-				"          order",
+				"          instance_identity",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> selectElectronicAddress",
-				"select1 sink(allowSchemaDrift: true,",
+				"filterPhoneNumber rank(asc(instance_identity, true),",
+				"     caseInsensitive: true,",
+				"     output(rank as long),",
+				"     dense: true) ~> setRankForFiltering",
+				"setRankForFiltering filter(rank == 1) ~> filterPhoneNumberOnRank",
+				"extractNestedData, getPhoneNumber join(extractNestedData@row_id == getPhoneNumber@row_id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> addElectronicAddress",
+				"filterPhoneNumberOnRank select(mapColumn(",
+				"          row_id,",
+				"          electronic_address = value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getPhoneNumber",
+				"addElectronicAddress sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
