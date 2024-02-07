@@ -30,7 +30,7 @@
 					"name": "parseJson"
 				},
 				{
-					"name": "extractTitle"
+					"name": "extractNestedData"
 				}
 			],
 			"scriptLines": [
@@ -48,21 +48,11 @@
 				"     batchSize: 1000,",
 				"     isolationLevel: 'READ_COMMITTED',",
 				"     format: 'table') ~> getJsonData",
-				"getJsonData parse(title = json_data ? (glossary as (title as string)),",
+				"getJsonData parse(title_out = json_data ? (glossary as (title as string)),",
 				"     format: 'json',",
 				"     documentForm: 'arrayOfDocuments') ~> parseJson",
-				"parseJson foldDown(unroll(),",
-				"     mapColumn(",
-				"          row_id,",
-				"          etl_id,",
-				"          created_on,",
-				"          modified_on,",
-				"          json_data,",
-				"          title",
-				"     ),",
-				"     skipDuplicateMapInputs: false,",
-				"     skipDuplicateMapOutputs: false) ~> extractTitle",
-				"extractTitle sink(allowSchemaDrift: true,",
+				"parseJson derive(title_out = title_out.glossary.title) ~> extractNestedData",
+				"extractNestedData sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'delimited',",
 				"     columnDelimiter: ',',",
