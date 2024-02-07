@@ -27,6 +27,9 @@
 				},
 				{
 					"name": "extractNestedData"
+				},
+				{
+					"name": "getRequiredFields"
 				}
 			],
 			"scriptLines": [
@@ -50,7 +53,17 @@
 				"     documentForm: 'arrayOfDocuments') ~> parseJson",
 				"parseJson derive(message_id = technical_data.messageId,",
 				"          operation_status = technical_data.status) ~> extractNestedData",
-				"extractNestedData sink(allowSchemaDrift: true,",
+				"extractNestedData select(mapColumn(",
+				"          row_id,",
+				"          etl_id,",
+				"          created_on,",
+				"          modified_on,",
+				"          message_id,",
+				"          operation_status",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getRequiredFields",
+				"getRequiredFields sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
