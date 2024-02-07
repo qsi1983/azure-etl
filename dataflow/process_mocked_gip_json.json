@@ -72,6 +72,9 @@
 				},
 				{
 					"name": "extractPhysicalComponents"
+				},
+				{
+					"name": "parse1"
 				}
 			],
 			"scriptLines": [
@@ -195,6 +198,10 @@
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> extractPhysicalComponents",
+				"extractPhysicalComponents parse(column1 = physical_address ? (physicalAddressComponentType as string,",
+				"          physicalAddressComponentValue as string),",
+				"     format: 'json',",
+				"     documentForm: 'arrayOfDocuments') ~> parse1",
 				"getPhysicalAddress sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
