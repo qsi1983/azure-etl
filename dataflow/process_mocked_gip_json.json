@@ -33,6 +33,9 @@
 				},
 				{
 					"name": "parseElectronicAddress"
+				},
+				{
+					"name": "extractElectronicAddress"
 				}
 			],
 			"scriptLines": [
@@ -80,7 +83,9 @@
 				"flattenElectronicAddress parse(electronic_address = electronic_address_list ? (electronicAddress as string,",
 				"          electronicAddressType as string),",
 				"     format: 'json',",
-				"     documentForm: 'documentPerLine') ~> parseElectronicAddress",
+				"     documentForm: 'arrayOfDocuments') ~> parseElectronicAddress",
+				"parseElectronicAddress derive(key = electronic_address.electronicAddressType,",
+				"          value = electronic_address.electronicAddress) ~> extractElectronicAddress",
 				"extractNestedData sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
