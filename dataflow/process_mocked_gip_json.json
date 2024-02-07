@@ -30,9 +30,6 @@
 				},
 				{
 					"name": "getRequiredFields"
-				},
-				{
-					"name": "parse1"
 				}
 			],
 			"scriptLines": [
@@ -56,7 +53,8 @@
 				"          involvedParty as (involvedPartyId as string,",
 				"          header as (ipType as string,",
 				"          soleProprietor as boolean),",
-				"          ipLocationElectronicAddresses as string[])),",
+				"          ipLocationElectronicAddresses as string[],",
+				"          ipLocationPhysicalAddresses as string[])),",
 				"     format: 'json',",
 				"     documentForm: 'arrayOfDocuments') ~> parseJson",
 				"parseJson derive(message_id = technical_data.messageId,",
@@ -65,8 +63,9 @@
 				"          gip = technical_data.involvedParty.involvedPartyId,",
 				"          involved_party_type = technical_data.involvedParty.header.ipType,",
 				"          sole_trade_flag = technical_data.involvedParty.header.soleProprietor,",
-				"          column1 = technical_data.involvedParty.ipLocationElectronicAddresses[1]) ~> extractNestedData",
-				"parse1 select(mapColumn(",
+				"          electronic_addresses = technical_data.involvedParty.ipLocationElectronicAddresses,",
+				"          physical_addresses = technical_data.involvedParty.ipLocationPhysicalAddresses) ~> extractNestedData",
+				"extractNestedData select(mapColumn(",
 				"          row_id,",
 				"          etl_id,",
 				"          created_on,",
@@ -81,9 +80,6 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> getRequiredFields",
-				"extractNestedData parse(column1_out = column1 ? (electronicAddress as string),",
-				"     format: 'json',",
-				"     documentForm: 'arrayOfDocuments') ~> parse1",
 				"getRequiredFields sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
