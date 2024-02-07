@@ -29,7 +29,10 @@
 					"name": "extractNestedData"
 				},
 				{
-					"name": "getRequiredFields"
+					"name": "flattenElectronicAddress"
+				},
+				{
+					"name": "parseElectronicAddress"
 				}
 			],
 			"scriptLines": [
@@ -63,24 +66,22 @@
 				"          gip = technical_data.involvedParty.involvedPartyId,",
 				"          involved_party_type = technical_data.involvedParty.header.ipType,",
 				"          sole_trade_flag = technical_data.involvedParty.header.soleProprietor,",
-				"          electronic_addresses = technical_data.involvedParty.ipLocationElectronicAddresses,",
-				"          physical_addresses = technical_data.involvedParty.ipLocationPhysicalAddresses) ~> extractNestedData",
-				"extractNestedData select(mapColumn(",
+				"          electronic_address_list = technical_data.involvedParty.ipLocationElectronicAddresses,",
+				"          physical_address_list = technical_data.involvedParty.ipLocationPhysicalAddresses,",
+				"          row_id = row_id) ~> extractNestedData",
+				"extractNestedData foldDown(unroll(technical_data.involvedParty.ipLocationElectronicAddresses),",
+				"     mapColumn(",
 				"          row_id,",
 				"          etl_id,",
-				"          created_on,",
-				"          modified_on,",
-				"          message_id,",
-				"          operation_status,",
-				"          message_schema_version,",
-				"          gip,",
-				"          involved_party_type,",
-				"          sole_trade_flag,",
-				"          column1 = column1_out",
+				"          electronic_address_list = technical_data.involvedParty.ipLocationElectronicAddresses",
 				"     ),",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> getRequiredFields",
-				"getRequiredFields sink(allowSchemaDrift: true,",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> flattenElectronicAddress",
+				"flattenElectronicAddress parse(electronic_address = electronic_address_list ? (electronicAddress as string,",
+				"          electronicAddressType as string),",
+				"     format: 'json',",
+				"     documentForm: 'documentPerLine') ~> parseElectronicAddress",
+				"extractNestedData sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
