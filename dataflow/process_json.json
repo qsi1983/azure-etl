@@ -30,6 +30,9 @@
 				},
 				{
 					"name": "getRequiredFields"
+				},
+				{
+					"name": "parse1"
 				}
 			],
 			"scriptLines": [
@@ -62,8 +65,8 @@
 				"          gip = technical_data.involvedParty.involvedPartyId,",
 				"          involved_party_type = technical_data.involvedParty.header.ipType,",
 				"          sole_trade_flag = technical_data.involvedParty.header.soleProprietor,",
-				"          column1 = technical_data.involvedParty.ipLocationElectronicAddresses.electronicAddress) ~> extractNestedData",
-				"extractNestedData select(mapColumn(",
+				"          column1 = technical_data.involvedParty.ipLocationElectronicAddresses[1]) ~> extractNestedData",
+				"parse1 select(mapColumn(",
 				"          row_id,",
 				"          etl_id,",
 				"          created_on,",
@@ -74,10 +77,13 @@
 				"          gip,",
 				"          involved_party_type,",
 				"          sole_trade_flag,",
-				"          column1",
+				"          column1 = column1_out",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> getRequiredFields",
+				"extractNestedData parse(column1_out = column1 ? (electronicAddress as string) ,",
+				"     format: 'json',",
+				"     documentForm: 'arrayOfDocuments') ~> parse1",
 				"getRequiredFields sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
