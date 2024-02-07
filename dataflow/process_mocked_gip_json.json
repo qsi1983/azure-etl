@@ -36,6 +36,18 @@
 				},
 				{
 					"name": "extractElectronicAddress"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "filterPhoneNumber"
+				},
+				{
+					"name": "sortByPhoneNumberOrded"
+				},
+				{
+					"name": "selectElectronicAddress"
 				}
 			],
 			"scriptLines": [
@@ -81,12 +93,42 @@
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> flattenElectronicAddress",
 				"flattenElectronicAddress parse(electronic_address = electronic_address_list ? (electronicAddress as string,",
-				"          electronicAddressType as string),",
+				"          electronicAddressType as string,",
+				"          instanceIdentity as long),",
 				"     format: 'json',",
 				"     documentForm: 'arrayOfDocuments') ~> parseElectronicAddress",
 				"parseElectronicAddress derive(key = electronic_address.electronicAddressType,",
-				"          value = electronic_address.electronicAddress) ~> extractElectronicAddress",
-				"extractNestedData sink(allowSchemaDrift: true,",
+				"          value = electronic_address.electronicAddress,",
+				"          order = electronic_address.instanceIdentity) ~> extractElectronicAddress",
+				"extractNestedData select(mapColumn(",
+				"          row_id,",
+				"          etl_id,",
+				"          created_on,",
+				"          modified_on,",
+				"          json_data,",
+				"          technical_data,",
+				"          message_id,",
+				"          operation_status,",
+				"          message_schema_version,",
+				"          gip,",
+				"          involved_party_type,",
+				"          sole_trade_flag,",
+				"          electronic_address_list,",
+				"          physical_address_list",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"selectElectronicAddress filter(equalsIgnoreCase(key, 'TELEPHONE_NUMBER')) ~> filterPhoneNumber",
+				"filterPhoneNumber sort(asc(order, true)) ~> sortByPhoneNumberOrded",
+				"extractElectronicAddress select(mapColumn(",
+				"          row_id,",
+				"          key,",
+				"          value,",
+				"          order",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectElectronicAddress",
+				"select1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
