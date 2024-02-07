@@ -84,6 +84,18 @@
 				},
 				{
 					"name": "splitByAddressType"
+				},
+				{
+					"name": "getAddressLine1"
+				},
+				{
+					"name": "getAddressLine2"
+				},
+				{
+					"name": "getAddressLine3"
+				},
+				{
+					"name": "getAddressLine4"
 				}
 			],
 			"scriptLines": [
@@ -228,6 +240,30 @@
 				"     equalsIgnoreCase(key, 'Z_POSTAL_ADDRESS'),",
 				"     equalsIgnoreCase(key, 'Z_POSTAL_CODE'),",
 				"     disjoint: false) ~> splitByAddressType@(addressLine1, addressLine2, addressLine3, addressLine4, other)",
+				"splitByAddressType@addressLine1 select(mapColumn(",
+				"          row_id,",
+				"          address_line_1 = value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getAddressLine1",
+				"splitByAddressType@addressLine2 select(mapColumn(",
+				"          row_id,",
+				"          address_line_2 = value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getAddressLine2",
+				"splitByAddressType@addressLine3 select(mapColumn(",
+				"          row_id,",
+				"          address_line_3 = value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getAddressLine3",
+				"splitByAddressType@addressLine4 select(mapColumn(",
+				"          row_id,",
+				"          address_line_4 = value",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getAddressLine4",
 				"addCountry sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
