@@ -54,6 +54,24 @@
 				},
 				{
 					"name": "getPhoneNumber"
+				},
+				{
+					"name": "getPhysicalAddress"
+				},
+				{
+					"name": "flattenPhysicalAddress"
+				},
+				{
+					"name": "parsePhysicalAddress"
+				},
+				{
+					"name": "getPhysicalComponent"
+				},
+				{
+					"name": "getRegisteredAddress"
+				},
+				{
+					"name": "extractPhysicalComponents"
 				}
 			],
 			"scriptLines": [
@@ -131,7 +149,53 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> getPhoneNumber",
-				"addElectronicAddress sink(allowSchemaDrift: true,",
+				"addElectronicAddress select(mapColumn(",
+				"          row_id = extractNestedData@row_id,",
+				"          etl_id,",
+				"          created_on,",
+				"          modified_on,",
+				"          json_data,",
+				"          technical_data,",
+				"          message_id,",
+				"          operation_status,",
+				"          message_schema_version,",
+				"          gip,",
+				"          involved_party_type,",
+				"          sole_trade_flag,",
+				"          electronic_address_list,",
+				"          physical_address_list,",
+				"          row_id = getPhoneNumber@row_id,",
+				"          electronic_address",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> getPhysicalAddress",
+				"getPhysicalAddress foldDown(unroll(technical_data.involvedParty.ipLocationPhysicalAddresses),",
+				"     mapColumn(",
+				"          row_id,",
+				"          physical_address_list = technical_data.involvedParty.ipLocationPhysicalAddresses,",
+				"          header_sole_trade_flag = sole_trade_flag",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> flattenPhysicalAddress",
+				"flattenPhysicalAddress parse(physical_address_components = physical_address_list ? (physicalAddressType as string,",
+				"          soleProprietor as boolean,",
+				"          physicalAddressComponents as string[]),",
+				"     format: 'json',",
+				"     documentForm: 'arrayOfDocuments') ~> parsePhysicalAddress",
+				"parsePhysicalAddress derive(address_sole_trade_flag = physical_address_components.soleProprietor,",
+				"          physical_address_type = physical_address_components.physicalAddressType) ~> getPhysicalComponent",
+				"getPhysicalComponent filter(equalsIgnoreCase(physical_address_type, 'REGISTERED_ADDRESS')) ~> getRegisteredAddress",
+				"getRegisteredAddress foldDown(unroll(physical_address_components.physicalAddressComponents),",
+				"     mapColumn(",
+				"          row_id,",
+				"          physical_address = physical_address_components.physicalAddressComponents,",
+				"          header_sole_trade_flag,",
+				"          address_sole_trade_flag,",
+				"          physical_address_type",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> extractPhysicalComponents",
+				"getPhysicalAddress sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
