@@ -1,5 +1,13 @@
 {
 	"name": "optimus-etl",
+	"properties": {
+		"globalParameters": {
+			"gp_crm_base_url": {
+				"type": "string",
+				"value": "crm"
+			}
+		}
+	},
 	"location": "northeurope",
 	"identity": {
 		"type": "SystemAssigned",
