@@ -1,0 +1,9 @@
+{
+	"name": "adf-optimius-dev",
+	"location": "northeurope",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "0c2617ad-1b06-43a5-bd06-c09412bcfd7f",
+		"tenantId": "9a8ff9e3-0e35-4620-a724-e9834dc50b51"
+	}
+}
