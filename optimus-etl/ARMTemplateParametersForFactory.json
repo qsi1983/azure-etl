@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "optimus-etl"
+		},
+		"OPTIMUS_DEV_connectionString": {
+			"value": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=optimus-integrations-sandbox.database.windows.net;Initial Catalog=OPTIMUS_DEV;User ID=optimus"
+		},
+		"OPTIMUS_FILE_STORAGE_connectionString": {
+			"value": ""
+		},
+		"optimus_sandbox_keystore_properties_typeProperties_baseUrl": {
+			"value": "https://optimul-etl-sandbox-key.vault.azure.net/"
+		}
+	}
+}

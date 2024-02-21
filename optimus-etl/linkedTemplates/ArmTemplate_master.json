@@ -1,0 +1,64 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "optimus-etl"
+		},
+		"OPTIMUS_DEV_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'OPTIMUS_DEV'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=optimus-integrations-sandbox.database.windows.net;Initial Catalog=OPTIMUS_DEV;User ID=optimus"
+		},
+		"OPTIMUS_FILE_STORAGE_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'OPTIMUS_FILE_STORAGE'"
+		},
+		"optimus_sandbox_keystore_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://optimul-etl-sandbox-key.vault.azure.net/"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "optimus-etl_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"OPTIMUS_FILE_STORAGE_connectionString": {
+						"value": "[parameters('OPTIMUS_FILE_STORAGE_connectionString')]"
+					},
+					"OPTIMUS_DEV_connectionString": {
+						"value": "[parameters('OPTIMUS_DEV_connectionString')]"
+					},
+					"optimus_sandbox_keystore_properties_typeProperties_baseUrl": {
+						"value": "[parameters('optimus_sandbox_keystore_properties_typeProperties_baseUrl')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

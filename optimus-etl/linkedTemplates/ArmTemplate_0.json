@@ -1,0 +1,554 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "optimus-etl"
+		},
+		"OPTIMUS_FILE_STORAGE_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'OPTIMUS_FILE_STORAGE'"
+		},
+		"OPTIMUS_DEV_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'OPTIMUS_DEV'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=optimus-integrations-sandbox.database.windows.net;Initial Catalog=OPTIMUS_DEV;User ID=optimus"
+		},
+		"optimus_sandbox_keystore_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://optimul-etl-sandbox-key.vault.azure.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/OPTIMUS_FILE_STORAGE')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Optimus project file storage",
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('OPTIMUS_FILE_STORAGE_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/optimus_sandbox_keystore')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Key store for sandbox",
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('optimus_sandbox_keystore_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Airflow1')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "Airflow",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "North Europe",
+						"computeSize": "Large",
+						"extraNodes": 0,
+						"enableAutoscale": false
+					},
+					"airflowProperties": {
+						"airflowVersion": "2.6.3",
+						"airflowEnvironmentVariables": null,
+						"airflowRequirements": [],
+						"enableAADIntegration": true,
+						"enableTriggerers": false,
+						"userName": null,
+						"password": null,
+						"airflowEntityReferences": [],
+						"encryptedSecrets": [],
+						"secrets": null
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/OPTIMUS_DEV')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Connection to OPTIMUS DEVELOPMENT SQL DB ",
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('OPTIMUS_DEV_connectionString')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "optimus_sandbox_keystore",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "optimus-etl"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/optimus_sandbox_keystore')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/get_customer_json')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "OPTIMUS_DEV",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "row_id",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "etl_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "created_on",
+						"type": "datetime2",
+						"scale": 7
+					},
+					{
+						"name": "modified_on",
+						"type": "datetime2",
+						"scale": 7
+					},
+					{
+						"name": "json_data",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "stage",
+					"table": "test_table_1"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/OPTIMUS_DEV')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/process_mocked_gip_json')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"folder": {
+					"name": "JSON_PROCESSING"
+				},
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "get_customer_json",
+								"type": "DatasetReference"
+							},
+							"name": "getJsonData",
+							"description": "Gets json data from source table."
+						}
+					],
+					"sinks": [
+						{
+							"name": "putFileToStorage"
+						}
+					],
+					"transformations": [
+						{
+							"name": "parseJson"
+						},
+						{
+							"name": "extractNestedData"
+						},
+						{
+							"name": "flattenElectronicAddress"
+						},
+						{
+							"name": "parseElectronicAddress"
+						},
+						{
+							"name": "extractElectronicAddress"
+						},
+						{
+							"name": "filterPhoneNumber"
+						},
+						{
+							"name": "selectElectronicAddress"
+						},
+						{
+							"name": "setRankForFiltering"
+						},
+						{
+							"name": "filterPhoneNumberOnRank"
+						},
+						{
+							"name": "addElectronicAddress"
+						},
+						{
+							"name": "getPhoneNumber"
+						},
+						{
+							"name": "getPhysicalAddress"
+						},
+						{
+							"name": "flattenPhysicalAddress"
+						},
+						{
+							"name": "parsePhysicalAddress"
+						},
+						{
+							"name": "getPhysicalComponent"
+						},
+						{
+							"name": "getRegisteredAddress"
+						},
+						{
+							"name": "extractPhysicalComponents"
+						},
+						{
+							"name": "parsePhysicalComponent"
+						},
+						{
+							"name": "getPhysicalAddressValues"
+						},
+						{
+							"name": "addAddressLine1"
+						},
+						{
+							"name": "splitByAddressType"
+						},
+						{
+							"name": "getAddressLine1"
+						},
+						{
+							"name": "getAddressLine2"
+						},
+						{
+							"name": "getAddressLine3"
+						},
+						{
+							"name": "getAddressLine4"
+						},
+						{
+							"name": "addAddressLine2"
+						},
+						{
+							"name": "getAddressColumns1"
+						},
+						{
+							"name": "getAddressColumns2"
+						},
+						{
+							"name": "addAddressLine3"
+						},
+						{
+							"name": "getAddressColumns3"
+						},
+						{
+							"name": "addAddressLine4"
+						},
+						{
+							"name": "getAddressColumns4"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          row_id as long,",
+						"          etl_id as string,",
+						"          created_on as timestamp,",
+						"          modified_on as timestamp,",
+						"          json_data as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     limit: 100,",
+						"     enableCdc: true,",
+						"     mode: 'read',",
+						"     skipInitialLoad: false,",
+						"     waterMarkColumn: 'row_id',",
+						"     batchSize: 1000,",
+						"     isolationLevel: 'READ_COMMITTED',",
+						"     format: 'table') ~> getJsonData",
+						"getJsonData parse(technical_data = json_data ? (messageId as string,",
+						"          status as string,",
+						"          schemaVersion as string,",
+						"          involvedParty as (involvedPartyId as string,",
+						"          header as (ipType as string,",
+						"          soleProprietor as boolean),",
+						"          ipLocationElectronicAddresses as string[],",
+						"          ipLocationPhysicalAddresses as string[])),",
+						"     format: 'json',",
+						"     documentForm: 'arrayOfDocuments') ~> parseJson",
+						"parseJson derive(message_id = technical_data.messageId,",
+						"          operation_status = technical_data.status,",
+						"          message_schema_version = technical_data.schemaVersion,",
+						"          gip = technical_data.involvedParty.involvedPartyId,",
+						"          involved_party_type = technical_data.involvedParty.header.ipType,",
+						"          sole_trade_flag = technical_data.involvedParty.header.soleProprietor,",
+						"          electronic_address_list = technical_data.involvedParty.ipLocationElectronicAddresses,",
+						"          physical_address_list = technical_data.involvedParty.ipLocationPhysicalAddresses,",
+						"          row_id = row_id) ~> extractNestedData",
+						"extractNestedData foldDown(unroll(technical_data.involvedParty.ipLocationElectronicAddresses),",
+						"     mapColumn(",
+						"          row_id,",
+						"          etl_id,",
+						"          electronic_address_list = technical_data.involvedParty.ipLocationElectronicAddresses",
+						"     ),",
+						"     skipDuplicateMapInputs: false,",
+						"     skipDuplicateMapOutputs: false) ~> flattenElectronicAddress",
+						"flattenElectronicAddress parse(electronic_address = electronic_address_list ? (electronicAddress as string,",
+						"          electronicAddressType as string,",
+						"          instanceIdentity as long),",
+						"     format: 'json',",
+						"     documentForm: 'arrayOfDocuments') ~> parseElectronicAddress",
+						"parseElectronicAddress derive(key = electronic_address.electronicAddressType,",
+						"          value = electronic_address.electronicAddress,",
+						"          instance_identity = electronic_address.instanceIdentity) ~> extractElectronicAddress",
+						"selectElectronicAddress filter(equalsIgnoreCase(key, 'TELEPHONE_NUMBER')) ~> filterPhoneNumber",
+						"extractElectronicAddress select(mapColumn(",
+						"          row_id,",
+						"          key,",
+						"          value,",
+						"          instance_identity",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> selectElectronicAddress",
+						"filterPhoneNumber rank(asc(instance_identity, true),",
+						"     caseInsensitive: true,",
+						"     output(rank as long),",
+						"     dense: true) ~> setRankForFiltering",
+						"setRankForFiltering filter(rank == 1) ~> filterPhoneNumberOnRank",
+						"extractNestedData, getPhoneNumber join(extractNestedData@row_id == getPhoneNumber@row_id,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> addElectronicAddress",
+						"filterPhoneNumberOnRank select(mapColumn(",
+						"          row_id,",
+						"          electronic_address = value",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getPhoneNumber",
+						"addElectronicAddress select(mapColumn(",
+						"          row_id = extractNestedData@row_id,",
+						"          etl_id,",
+						"          created_on,",
+						"          modified_on,",
+						"          json_data,",
+						"          technical_data,",
+						"          message_id,",
+						"          operation_status,",
+						"          message_schema_version,",
+						"          gip,",
+						"          involved_party_type,",
+						"          sole_trade_flag,",
+						"          electronic_address_list,",
+						"          physical_address_list,",
+						"          row_id = getPhoneNumber@row_id,",
+						"          electronic_address",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getPhysicalAddress",
+						"getPhysicalAddress foldDown(unroll(technical_data.involvedParty.ipLocationPhysicalAddresses),",
+						"     mapColumn(",
+						"          row_id,",
+						"          physical_address_list = technical_data.involvedParty.ipLocationPhysicalAddresses,",
+						"          header_sole_trade_flag = sole_trade_flag",
+						"     ),",
+						"     skipDuplicateMapInputs: false,",
+						"     skipDuplicateMapOutputs: false) ~> flattenPhysicalAddress",
+						"flattenPhysicalAddress parse(physical_address_components = physical_address_list ? (physicalAddressType as string,",
+						"          soleProprietor as boolean,",
+						"          physicalAddressComponents as string[]),",
+						"     format: 'json',",
+						"     documentForm: 'arrayOfDocuments') ~> parsePhysicalAddress",
+						"parsePhysicalAddress derive(address_sole_trade_flag = physical_address_components.soleProprietor,",
+						"          physical_address_type = physical_address_components.physicalAddressType) ~> getPhysicalComponent",
+						"getPhysicalComponent filter(equalsIgnoreCase(physical_address_type, 'REGISTERED_ADDRESS')) ~> getRegisteredAddress",
+						"getRegisteredAddress foldDown(unroll(physical_address_components.physicalAddressComponents),",
+						"     mapColumn(",
+						"          row_id,",
+						"          physical_address = physical_address_components.physicalAddressComponents,",
+						"          header_sole_trade_flag,",
+						"          address_sole_trade_flag,",
+						"          physical_address_type",
+						"     ),",
+						"     skipDuplicateMapInputs: false,",
+						"     skipDuplicateMapOutputs: false) ~> extractPhysicalComponents",
+						"extractPhysicalComponents parse(column1 = physical_address ? (physicalAddressComponentType as string,",
+						"          physicalAddressComponentValue as string),",
+						"     format: 'json',",
+						"     documentForm: 'arrayOfDocuments') ~> parsePhysicalComponent",
+						"parsePhysicalComponent select(mapColumn(",
+						"          row_id,",
+						"          value = column1.physicalAddressComponentValue,",
+						"          key = column1.physicalAddressComponentType",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getPhysicalAddressValues",
+						"getPhysicalAddress, getAddressLine1 join(getPhysicalAddress@row_id == getAddressLine1@row_id,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> addAddressLine1",
+						"getPhysicalAddressValues split(equalsIgnoreCase(key, 'COUNTRY_CODE'),",
+						"     equalsIgnoreCase(key, 'Z_STREET_ADDRESS'),",
+						"     equalsIgnoreCase(key, 'Z_POSTAL_ADDRESS'),",
+						"     equalsIgnoreCase(key, 'Z_POSTAL_CODE'),",
+						"     disjoint: false) ~> splitByAddressType@(addressLine1, addressLine2, addressLine3, addressLine4, other)",
+						"splitByAddressType@addressLine1 select(mapColumn(",
+						"          row_id,",
+						"          address_line_1 = value",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressLine1",
+						"splitByAddressType@addressLine2 select(mapColumn(",
+						"          row_id,",
+						"          address_line_2 = value",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressLine2",
+						"splitByAddressType@addressLine3 select(mapColumn(",
+						"          row_id,",
+						"          address_line_3 = value",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressLine3",
+						"splitByAddressType@addressLine4 select(mapColumn(",
+						"          row_id,",
+						"          address_line_4 = value",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressLine4",
+						"getAddressColumns1, getAddressLine2 join(getAddressColumns1@row_id == getAddressLine2@row_id,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> addAddressLine2",
+						"addAddressLine1 select(mapColumn(",
+						"          row_id = getPhysicalAddress@row_id,",
+						"          etl_id,",
+						"          created_on,",
+						"          modified_on,",
+						"          json_data,",
+						"          message_id,",
+						"          operation_status,",
+						"          message_schema_version,",
+						"          gip,",
+						"          involved_party_type,",
+						"          sole_trade_flag,",
+						"          electronic_address_list,",
+						"          physical_address_list,",
+						"          electronic_address,",
+						"          address_line_1",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressColumns1",
+						"addAddressLine2 select(mapColumn(",
+						"          row_id = getAddressColumns1@row_id,",
+						"          etl_id,",
+						"          created_on,",
+						"          modified_on,",
+						"          json_data,",
+						"          message_id,",
+						"          operation_status,",
+						"          message_schema_version,",
+						"          gip,",
+						"          involved_party_type,",
+						"          sole_trade_flag,",
+						"          electronic_address_list,",
+						"          physical_address_list,",
+						"          electronic_address,",
+						"          address_line_1,",
+						"          address_line_2",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressColumns2",
+						"getAddressColumns2, getAddressLine3 join(getAddressColumns2@row_id == getAddressLine3@row_id,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> addAddressLine3",
+						"addAddressLine3 select(mapColumn(",
+						"          row_id = getAddressColumns2@row_id,",
+						"          etl_id,",
+						"          created_on,",
+						"          modified_on,",
+						"          message_id,",
+						"          operation_status,",
+						"          message_schema_version,",
+						"          gip,",
+						"          involved_party_type,",
+						"          sole_trade_flag,",
+						"          phone_number = electronic_address,",
+						"          address_line_1,",
+						"          address_line_2,",
+						"          address_line_3",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressColumns3",
+						"getAddressColumns3, getAddressLine4 join(getAddressColumns3@row_id == getAddressLine4@row_id,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> addAddressLine4",
+						"addAddressLine4 select(mapColumn(",
+						"          row_id = getAddressColumns3@row_id,",
+						"          etl_id,",
+						"          created_on,",
+						"          modified_on,",
+						"          message_id,",
+						"          operation_status,",
+						"          message_schema_version,",
+						"          gip,",
+						"          involved_party_type,",
+						"          sole_trade_flag,",
+						"          phone_number,",
+						"          address_line_1,",
+						"          address_line_2,",
+						"          address_line_3,",
+						"          address_line_4",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> getAddressColumns4",
+						"getAddressColumns4 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     keys:['row_id'],",
+						"     store: 'cache',",
+						"     format: 'inline',",
+						"     output: false,",
+						"     saveOrder: 1) ~> putFileToStorage"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/get_customer_json')]"
+			]
+		}
+	]
+}

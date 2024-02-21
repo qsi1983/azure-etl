@@ -1,0 +1,6 @@
+{
+	"gp_crm_base_url": {
+		"type": "string",
+		"value": "crm"
+	}
+}
